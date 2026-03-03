@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi App</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'lexend': ['Lexend', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- ========================================
+        ESTILOS CSS
+    ======================================== -->
+    <style>
+        /* ========================================
+            CUERPO Y BASE
+        ======================================== */
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: #000000;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* ========================================
+            OCULTAR SCROLLBAR
+        ======================================== */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ========================================
+            CAROUSEL (MASK-IMAGE PARA DIFUMINAR BORDES)
+        ======================================== */
+        #mainAlbumsScroll,
+        #newReleasesScroll {
+            overflow-x: auto;
+            overflow-y: visible !important;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            
+            -webkit-mask-image: 
+                linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%),
+                linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            mask-image: 
+                linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%),
+                linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            
+            -webkit-mask-composite: intersect;
+            mask-composite: intersect;
+            
+            padding: 40px;
+        }
+
+        /* ========================================
+            BOTONES CON EFECTO LÍQUIDO
+        ======================================== */
+        .btn-liquido {
+            position: relative;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            overflow: visible;
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .btn-liquido::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, 
+                rgba(82, 82, 91, 0.6) 0%, 
+                rgba(63, 63, 70, 0.3) 35%, 
+                rgba(39, 39, 42, 0.2) 50%, 
+                rgba(24, 24, 27, 0.4) 65%, 
+                rgba(82, 82, 91, 0.6) 100%);
+            opacity: 0;
+            transition: opacity 0.4s cubic-bezier(0.2, 0, 0, 1);
+            animation: liquido-1 4s ease-in-out infinite;
+            z-index: 0;
+            filter: blur(4px);
+        }
+
+        .btn-liquido::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            background: linear-gradient(225deg, 
+                rgba(113, 113, 122, 0.4) 0%, 
+                rgba(63, 63, 70, 0.2) 50%, 
+                rgba(82, 82, 91, 0.3) 100%);
+            opacity: 0;
+            transition: opacity 0.4s cubic-bezier(0.2, 0, 0, 1);
+            animation: liquido-2 5s ease-in-out infinite;
+            z-index: 0;
+            filter: blur(3px);
+        }
+
+        @keyframes liquido-1 {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        @keyframes liquido-2 {
+            0%, 100% { transform: rotate(180deg) scale(1); }
+            50% { transform: rotate(360deg) scale(1.05); }
+        }
+
+        .btn-liquido:hover::before,
+        .btn-liquido:hover::after {
+            opacity: 1;
+        }
+
+        .btn-liquido:hover {
+            transform: scale(1.15);
+        }
+
+        /* ========================================
+            BOTÓN PLAY EN ÁLBUMES (Solo en el centro)
+        ======================================== */
+        .btn-play-album {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            width: 40px;
+            height: 40px;
+            
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+            
+            transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), 
+                        transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+            
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.9) 0%,
+                rgba(255, 255, 255, 0.7) 100%
+            );
+            border-radius: 50%;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .album-card.center .btn-play-album {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .btn-play-album img {
+            width: 22px;
+            height: 22px;
+            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .album-card.center .btn-play-album:hover {
+            transform: scale(1.1);
+        }
+
+        /* ========================================
+            BOTÓN PLAY EN NEW RELEASES (Posición inferior)
+        ======================================== */
+        .btn-play-album-new {
+            position: absolute;
+            right: 15px;
+            bottom: 10px;
+            width: 40px;
+            height: 40px;
+            
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+            
+            transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), 
+                        transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+            
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.9) 0%,
+                rgba(255, 255, 255, 0.7) 100%
+            );
+            border-radius: 50%;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .album-card.center .btn-play-album-new {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .btn-play-album-new img {
+            width: 16px;
+            height: 16px;
+            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .album-card.center .btn-play-album-new:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-liquido:hover {
+            transform: scale(1.15);
+        }
+
+        /* Botón sutil (menos intenso) */
+        .btn-sutil::before {
+            background: linear-gradient(135deg, 
+                rgba(82, 82, 91, 0.4) 0%, 
+                rgba(63, 63, 70, 0.2) 35%, 
+                rgba(39, 39, 42, 0.1) 50%, 
+                rgba(24, 24, 27, 0.3) 65%, 
+                rgba(82, 82, 91, 0.4) 100%);
+        }
+
+        .btn-sutil::after {
+            background: linear-gradient(225deg, 
+                rgba(113, 113, 122, 0.2) 0%, 
+                rgba(63, 63, 70, 0.1) 50%, 
+                rgba(82, 82, 91, 0.2) 100%);
+        }
+
+        /* ========================================
+            BOTÓN PLAY/PAUSE (Now Playing)
+        ======================================== */
+        .btn-play {
+            position: relative;
+            background: #27272a;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            overflow: hidden;
+            border-radius: 50%;
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), 
+                        box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .btn-play::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, 
+                rgba(82, 82, 91, 0.7) 0%, 
+                rgba(63, 63, 70, 0.4) 35%, 
+                rgba(39, 39, 42, 0.3) 50%, 
+                rgba(24, 24, 27, 0.5) 65%, 
+                rgba(82, 82, 91, 0.7) 100%);
+            opacity: 0;
+            transition: opacity 0.5s cubic-bezier(0.2, 0, 0, 1);
+            animation: liquido-1 4s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .btn-play::after {
+            content: '';
+            position: absolute;
+            inset: -35%;
+            border-radius: 50%;
+            background: linear-gradient(225deg, 
+                rgba(113, 113, 122, 0.5) 0%, 
+                rgba(63, 63, 70, 0.3) 50%, 
+                rgba(82, 82, 91, 0.5) 100%);
+            opacity: 0;
+            transition: opacity 0.5s cubic-bezier(0.2, 0, 0, 1);
+            animation: liquido-2 5s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .btn-play:hover::before,
+        .btn-play:hover::after {
+            opacity: 1;
+        }
+
+        .btn-play:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(255, 134, 117, 0.2), 
+                        0 0 35px rgba(255, 134, 117, 0.1);
+        }
+
+        .btn-play:active {
+            transform: scale(0.95);
+        }
+
+        /* ========================================
+            BOTONES HEADER
+        ======================================== */
+        .btn-header {
+            position: relative;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            overflow: visible;
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .btn-header::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, 
+                rgba(82, 82, 91, 0.5) 0%, 
+                rgba(63, 63, 70, 0.2) 50%, 
+                rgba(82, 82, 91, 0.5) 100%);
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1);
+            z-index: 0;
+            filter: blur(3px);
+        }
+
+        .btn-header:hover::before {
+            opacity: 1;
+        }
+
+        .btn-header:hover {
+            transform: scale(1.1);
+        }
+
+        /* ========================================
+            TARJETAS DE ÁLBUMES (CAROUSEL)
+        ======================================== */
+        .album-card {
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), 
+                        opacity 0.3s cubic-bezier(0.2, 0, 0, 1), 
+                        filter 0.3s cubic-bezier(0.2, 0, 0, 1);
+            transform: scale(0.92);
+            opacity: 0.85;
+            filter: brightness(0.85);
+            border-radius: 36px;
+        }
+
+        .album-card.center {
+            transform: scale(1.1);
+            opacity: 1;
+            filter: brightness(1) drop-shadow(0 0 70px rgba(255, 134, 117, 0.30));
+            z-index: 50;
+            position: relative;
+        }
+
+        .album-card.adjacent {
+            transform: scale(0.92);
+            opacity: 0.85;
+            filter: brightness(0.85);
+        }
+
+        .album-card.edge {
+            transform: scale(0.85);
+            opacity: 0.5;
+            filter: brightness(0.6);
+        }
+
+        /* ========================================
+            CONTENEDORES DE PANTALLA
+        ======================================== */
+        #homeScreen {
+            background: #000000 !important;
+            overflow: visible !important;
+        }
+
+        /* ✅ NOW PLAYING - Color corregido (igual que Home) */
+        #nowPlayingScreen {
+            background: #000000;
+            overflow: hidden;
+            
+            /* Material Design 3 - Container Transform */
+            opacity: 0;
+            transform: scale(0.95) translateY(30px);
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.2, 0, 0, 1),
+                        transform 0.4s cubic-bezier(0.2, 0, 0, 1);
+            
+            /* Borde sutil para transición limpia */
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #nowPlayingScreen:not(.hidden) {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Búsqueda y Notificaciones */
+        #searchScreen,
+        #notificationsScreen {
+            background: #000000;
+            overflow: hidden;
+            
+            /* Shared Axis Transition */
+            transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+                        transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        #searchScreen.hidden,
+        #notificationsScreen.hidden {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+
+        /* ========================================
+            BOTTOM NAVIGATION BAR
+        ======================================== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0px;
+            left: 20px;
+            width: 356px;
+            height: 80px;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px 20px 0 0;
+            z-index: 100;
+            
+            /* Borde superior sutil */
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            
+            /* Material Design 3 - Fade Through */
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1),
+                        opacity 0.3s cubic-bezier(0.2, 0, 0, 1);
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .bottom-nav.nav-hiding {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        .bottom-nav.nav-showing {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        .bottom-nav.nav-visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Indicador de pestaña activa */
+        .nav-indicator {
+            position: absolute;
+            top: 0px;
+            width: 40px;
+            height: 4px;
+            background: linear-gradient(
+                to right,
+                #FFFFFF 0%,
+                #FFFFFF 100%
+            );
+            border-radius: 0 0 20px 20px;
+            
+            box-shadow: 0 4px 20px 3px rgba(255, 255, 255, 0.5);
+            
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .nav-indicator.moving {
+            box-shadow: 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Íconos de navegación */
+        .nav-icon {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-icon .icon-active,
+        .nav-icon .icon-inactive {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            transition: opacity 0.4s cubic-bezier(0.2, 0, 0, 1),
+                        transform 0.4s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .nav-icon .icon-inactive {
+            opacity: 0.5;
+            transform: scale(1);
+            filter: grayscale(100%);
+        }
+
+        .nav-icon .icon-active {
+            opacity: 0;
+            transform: scale(0.8);
+            filter: grayscale(0%);
+        }
+
+        .nav-icon.active .icon-inactive {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .nav-icon.active .icon-active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ========================================
+            PANTALLA DE BÚSQUEDA
+        ======================================== */
+        .search-bar {
+            position: relative;
+            background: rgba(39, 39, 42, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .search-bar input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-family: 'Lexend', sans-serif;
+            font-size: 14px;
+            padding: 12px 12px 12px 40px;
+        }
+
+        .search-bar input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-bar svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .search-history-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .search-history-item img {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .search-history-info {
+            flex: 1;
+        }
+
+        .search-history-title {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .search-history-subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        .btn-clear-history {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .btn-clear-history:hover {
+            color: #ffffff;
+        }
+
+        /* ========================================
+            PANEL DE NOTIFICACIONES
+        ======================================== */
+        .notification-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s cubic-bezier(0.2, 0, 0, 1);
+            position: relative;
+        }
+
+        .notification-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            background: #FF8675;
+            border-radius: 50%;
+        }
+
+        .notification-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-icon.music {
+            background: linear-gradient(135deg, rgba(255, 134, 117, 0.3) 0%, rgba(255, 107, 157, 0.3) 100%);
+        }
+
+        .notification-icon.update {
+            background: linear-gradient(135deg, rgba(107, 157, 255, 0.3) 0%, rgba(107, 255, 184, 0.3) 100%);
+        }
+
+        .notification-icon svg {
+            width: 24px;
+            height: 24px;
+            color: #ffffff;
+        }
+
+        .notification-info {
+            flex: 1;
+        }
+
+        .notification-title {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .notification-message {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        .notification-time {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+        }
+
+        .btn-mark-read {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .btn-mark-read:hover {
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-black font-lexend">
+
+    <!-- ========================================
+        PANTALLA 1: HOME / PRINCIPAL
+    ======================================== -->
+    <div id="homeScreen" class="w-96 h-[812px] relative">
+        
+        <!-- Header -->
+        <div class="left-[20px] top-[45px] absolute text-stone-300 text-base font-normal">
+            Good Evening
+        </div>
+        <div class="left-[20px] top-[71px] absolute text-white text-xl font-medium">
+            Urvashi
+        </div>
+        <div class="w-6 h-6 left-[110px] top-[73px] absolute">
+            <img class="w-6 h-6" 
+                src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/pollo.svg" 
+                alt="Perfil"/>
+        </div>
+
+        <!-- Botón de Búsqueda (Header) -->
+        <button class="btn-header absolute left-[283px] top-[61px] w-6 h-6 flex items-center justify-center" 
+                type="button" 
+                title="Buscar"
+                onclick="showSearch()">
+            <img class="w-5 h-5" 
+                src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/busqueda.svg" 
+                alt="Buscar"/>
+        </button>
+
+        <!-- Botón de Notificaciones (Header) -->
+        <button class="btn-header absolute left-[331px] top-[61px] w-6 h-6 flex items-center justify-center" 
+                type="button" 
+                title="Notificaciones"
+                onclick="showNotifications()">
+            <img class="w-5 h-5" 
+                src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/noti.svg" 
+                alt="Notificaciones"/>
+        </button>
+
+        <!-- Navegación: Tabs -->
+        <div class="left-[20px] top-[135px] absolute text-neutral-400 text-base font-light">
+            Podcasts
+        </div>
+        <div class="left-[154px] top-[130px] absolute text-neutral-200 text-2xl font-semibold">
+            Music
+        </div>
+        <div class="left-[308px] top-[135px] absolute text-neutral-400 text-base font-light">
+            ASMR
+        </div>
+
+        <!-- ========================================
+            CAROUSEL PRINCIPAL
+        ======================================== -->
+        <div class="left-[20px] top-[200px] absolute">
+            <div class="flex gap-4 overflow-x-auto w-[356px] h-[290px] scrollbar-hide" 
+                id="mainAlbumsScroll">
+                
+                <!-- Album 1 -->
+                <div class="album-card flex-shrink-0 w-[191px] h-[202px] relative cursor-pointer" 
+                    onclick="showNowPlaying()">
+                    <img class="w-[191px] h-[202px] object-cover rounded-[36px]" 
+                        src="./imagenes/maa.jpg" 
+                        alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-[192px] h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[18px] bottom-[25px] whitespace-nowrap">
+                            Dollaz on my head
+                        </div>
+                        <div class="text-neutral-400 text-xs absolute left-[18px] bottom-[8px] whitespace-nowrap">
+                            Gunna
+                        </div>
+                    </div>
+                    <button class="btn-play-album" 
+                            onclick="showNowPlaying(); event.stopPropagation();">
+                        <img class="w-5 h-5" 
+                            src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                            alt="Play"/>
+                    </button>
+                </div>
+
+                <!-- Album 2 (CENTRO) -->
+                <div class="album-card flex-shrink-0 w-[191px] h-[202px] relative cursor-pointer" 
+                    onclick="showNowPlaying()">
+                    <img class="w-[191px] h-[202px] object-cover rounded-[36px]" 
+                        src="./imagenes/jiji.jpg" 
+                        alt="Album"/>
+                    <div class="absolute bottom-0 left-[0px] w-[191px] h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[18px] bottom-[25px] whitespace-nowrap">
+                            Dollaz on my head
+                        </div>
+                        <div class="text-neutral-400 text-xs absolute left-[18px] bottom-[8px] whitespace-nowrap">
+                            Gunna
+                        </div>
+                    </div>
+                    <button class="btn-play-album" 
+                            onclick="showNowPlaying(); event.stopPropagation();">
+                        <img class="w-5 h-5" 
+                            src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                            alt="Play"/>
+                    </button>
+                </div>
+
+                <!-- Album 3 -->
+                <div class="album-card flex-shrink-0 w-[191px] h-[202px] relative cursor-pointer" 
+                    onclick="showNowPlaying()">
+                    <img class="w-[191px] h-[202px] object-cover rounded-[36px]" 
+                        src="./imagenes/piza.jpg" 
+                        alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-[191px] h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[18px] bottom-[25px] whitespace-nowrap">
+                            Car Sick
+                        </div>
+                        <div class="text-neutral-400 text-xs absolute left-[18px] bottom-[8px] whitespace-nowrap">
+                            Gunna
+                        </div>
+                    </div>
+                    <button class="btn-play-album" 
+                            onclick="showNowPlaying(); event.stopPropagation();">
+                        <img class="w-5 h-5" 
+                            src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                            alt="Play"/>
+                    </button>
+                </div>
+
+                <!-- Album 4 -->
+                <div class="album-card flex-shrink-0 w-[191px] h-[202px] relative cursor-pointer" 
+                    onclick="showNowPlaying()">
+                    <img class="w-[191px] h-[202px] object-cover rounded-[36px]" 
+                        src="./imagenes/emm.jpg" 
+                        alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-[191px] h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[18px] bottom-[25px] whitespace-nowrap">
+                            Out of time
+                        </div>
+                        <div class="text-neutral-400 text-xs absolute left-[18px] bottom-[8px] whitespace-nowrap">
+                            The Weeknd
+                        </div>
+                    </div>
+                    <button class="btn-play-album" 
+                            onclick="showNowPlaying(); event.stopPropagation();">
+                        <img class="w-5 h-5" 
+                            src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                            alt="Play"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================
+            NEW RELEASES
+        ======================================== -->
+        <div class="left-[20px] top-[500px] absolute">
+            <div class="text-neutral-200 text-2xl font-semibold mb-4">
+                New Releases
+            </div>
+            <div class="flex gap-4 overflow-x-auto w-[356px] h-[280px] scrollbar-hide" 
+                id="newReleasesScroll">
+                
+                <!-- Album 1 -->
+                <div class="album-card flex-shrink-0 w-48 h-52 relative cursor-pointer" 
+                    onclick="showNowPlaying()">
+                    <img class="w-48 h-52 object-cover rounded-[36px]" 
+                        src="./imagenes/emm.jpg" 
+                        alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-48 h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[20px] bottom-[28px] whitespace-nowrap">
+                            Out of time
+                        </div>
+                        <div class="text-neutral-400 text-xs absolute left-[20px] bottom-[10px] whitespace-nowrap">
+                            The Weeknd
+                        </div>
+                    </div>
+                    <button class="btn-play-album-new" 
+                            onclick="showNowPlaying(); event.stopPropagation();">
+                        <img class="w-5 h-5" 
+                            src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                            alt="Play"/>
+                    </button>
+                </div>
+
+                <!-- Album 2 -->
+                <div class="album-card flex-shrink-0 w-48 h-52 relative cursor-pointer" 
+                    onclick="showNowPlaying()">
+                    <img class="w-48 h-52 object-cover rounded-[36px]" 
+                        src="./imagenes/si.jpg" 
+                        alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-48 h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[20px] bottom-[28px] whitespace-nowrap">
+                            Truly Yours
+                        </div>
+                        <div class="text-neutral-400 text-xs absolute left-[20px] bottom-[10px] whitespace-nowrap">
+                            Eric Bellinger
+                        </div>
+                    </div>
+                    <button class="btn-play-album-new" 
+                            onclick="showNowPlaying(); event.stopPropagation();">
+                        <img class="w-5 h-5" 
+                            src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                            alt="Play"/>
+                    </button>
+                </div>
+
+                <!-- Album 3 -->
+                <div class="album-card flex-shrink-0 w-48 h-52 relative cursor-pointer" 
+                    onclick="showNowPlaying()">
+                    <img class="w-48 h-52 object-cover rounded-[36px]" 
+                        src="./imagenes/piza.jpg" 
+                        alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-48 h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[20px] bottom-[28px] whitespace-nowrap">
+                            Car Sick
+                        </div>
+                        <div class="text-neutral-400 text-xs absolute left-[20px] bottom-[10px] whitespace-nowrap">
+                            Gunna
+                        </div>
+                    </div>
+                    <button class="btn-play-album-new" 
+                            onclick="showNowPlaying(); event.stopPropagation();">
+                        <img class="w-5 h-5" 
+                            src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                            alt="Play"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Espacio para que el contenido no quede detrás del bottom nav -->
+        <div class="h-[900px]"></div>
+    </div>
+
+    <!-- ========================================
+        BOTTOM NAVIGATION BAR
+    ======================================== -->
+    <div class="bottom-nav nav-visible h-[75px]">
+        
+        <!-- Indicador de pestaña activa -->
+        <div class="nav-indicator" id="navIndicator" style="left: 40px;"></div>
+        
+        <!-- Home Icon -->
+        <button class="nav-icon active absolute left-[40px] top-[10px] w-10 h-10 flex items-center justify-center" 
+                type="button" 
+                title="Inicio"
+                onclick="showHome()">
+            <img class="w-6 h-6 icon-active" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/2-homeB11.svg" 
+                 alt="Home"/>
+            <img class="w-6 h-6 icon-inactive" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/2-home-11.svg" 
+                 alt="Home"/>
+        </button>
+
+        <!-- Explore/Search Icon -->
+        <button class="nav-icon absolute left-[120px] top-[10px] w-10 h-10 flex items-center justify-center" 
+                type="button" 
+                title="Explorar"
+                onclick="showExplore()">
+            <img class="w-6 h-6 icon-active" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/42-exploreB.svg" 
+                 alt="Explore"/>
+            <img class="w-6 h-6 icon-inactive" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/42-explore.svg" 
+                 alt="Explore"/>
+        </button>
+
+        <!-- Play Icon -->
+        <button class="nav-icon absolute left-[200px] top-[10px] w-10 h-10 flex items-center justify-center" 
+                type="button" 
+                title="Reproducir"
+                onclick="showNowPlayingFromNav()">
+            <img class="w-6 h-6 icon-active" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/30-playB.svg" 
+                 alt="Play"/>
+            <img class="w-6 h-6 icon-inactive" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/30-play.svg" 
+                 alt="Play"/>
+        </button>
+
+        <!-- Profile Icon -->
+        <button class="nav-icon absolute left-[280px] top-[10px] w-10 h-10 flex items-center justify-center" 
+                type="button" 
+                title="Perfil"
+                onclick="setActiveNav(this, 3)">
+            <img class="w-6 h-6 icon-active" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/11-profileB.svg" 
+                 alt="Profile"/>
+            <img class="w-6 h-6 icon-inactive" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/11-profile.svg" 
+                 alt="Profile"/>
+        </button>
+    </div>
+
+    <!-- ========================================
+        PANTALLA 2: NOW PLAYING
+    ======================================== -->
+    <div id="nowPlayingScreen" class="w-96 h-[812px] relative hidden">
+        <button onclick="showHome()" 
+                class="absolute left-[20px] top-[50px] w-8 h-8 flex items-center justify-center z-50">
+            <img class="w-6 h-6" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/back.svg" 
+                 alt="Volver"/>
+        </button>
+        <img class="w-64 h-72 left-[58px] top-[109px] absolute rounded-[31.84px]" 
+             src="./imagenes/jiji.jpg" 
+             alt="Album"/>
+        <div class="left-[105px] top-[441px] absolute text-white text-2xl font-semibold">
+            Bank Account
+        </div>
+        <div class="left-[144px] top-[476px] absolute text-white text-lg font-normal">
+            21 Savage
+        </div>
+        <div class="w-[340px] h-1 left-[28px] top-[600px] absolute bg-zinc-700 rounded-full">
+            <div class="h-full w-[35%] bg-gradient-to-r from-white to-white/60 rounded-full"></div>
+        </div>
+        <div class="left-[18px] top-[620px] absolute text-neutral-400 text-xs">
+            01:35
+        </div>
+        <div class="left-[328px] top-[620px] absolute text-neutral-400 text-xs">
+            -02:32
+        </div>
+
+        <!-- Barra de Reproducción -->
+        <div class="w-96 h-24 left-0 top-[660px] absolute bg-zinc-900/50 backdrop-blur-md border-t border-white/10">
+            <button class="btn-liquido btn-sutil absolute left-[44px] top-[50px] w-6 h-6 flex items-center justify-center" 
+                    type="button" 
+                    title="Shuffle" 
+                    onclick="toggleShuffle(this)">
+                <img class="w-5 h-5" 
+                     src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/shuffle.svg" 
+                     alt="Shuffle"/>
+            </button>
+            <button class="btn-liquido absolute left-[133px] top-[50px] w-8 h-8 flex items-center justify-center" 
+                    type="button" 
+                    title="Anterior" 
+                    onclick="skipBackward()">
+                <img class="w-6 h-6" 
+                     src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/skip-back.svg" 
+                     alt="Anterior"/>
+            </button>
+            <button id="playPauseBtn" 
+                    class="btn-play absolute left-[221px] top-[48px] w-16 h-16 flex items-center justify-center" 
+                    type="button" 
+                    title="Play/Pause" 
+                    onclick="togglePlay(this)">
+                <img id="playIcon" 
+                     class="w-8 h-8" 
+                     src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" 
+                     alt="Play"/>
+            </button>
+            <button class="btn-liquido absolute left-[310px] top-[50px] w-8 h-8 flex items-center justify-center" 
+                    type="button" 
+                    title="Siguiente" 
+                    onclick="skipForward()">
+                <img class="w-6 h-6" 
+                     src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/skip-forward.svg" 
+                     alt="Siguiente"/>
+            </button>
+            <button class="btn-liquido btn-sutil absolute left-[350px] top-[50px] w-6 h-6 flex items-center justify-center" 
+                    type="button" 
+                    title="Repetir" 
+                    onclick="toggleRepeat(this)">
+                <img class="w-5 h-5" 
+                     src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/repeat.svg" 
+                     alt="Repeat"/>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================
+        PANTALLA 3: BÚSQUEDA
+    ======================================== -->
+    <div id="searchScreen" class="w-96 h-[812px] relative hidden">
+        <button onclick="showHome()" 
+                class="absolute left-[20px] top-[50px] w-8 h-8 flex items-center justify-center z-50">
+            <img class="w-6 h-6" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/back.svg" 
+                 alt="Volver"/>
+        </button>
+        <div class="left-[20px] top-[50px] absolute text-white text-2xl font-semibold">
+            Buscar
+        </div>
+        <div class="left-[20px] top-[100px] absolute w-[356px] search-bar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" placeholder="Artistas, canciones, álbumes..." id="searchInput"/>
+        </div>
+        <div class="left-[20px] top-[160px] absolute w-[356px]">
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-neutral-200 text-lg font-semibold">Búsquedas Recientes</div>
+                <button class="btn-clear-history" onclick="clearSearchHistory()">Limpiar</button>
+            </div>
+            <div class="search-history-item cursor-pointer" onclick="searchItem('Gunna')">
+                <img src="./imagenes/maa.jpg" alt="Gunna"/>
+                <div class="search-history-info">
+                    <div class="search-history-title">Gunna</div>
+                    <div class="search-history-subtitle">Artista</div>
+                </div>
+            </div>
+            <div class="search-history-item cursor-pointer" onclick="searchItem('The Weeknd')">
+                <img src="./imagenes/emm.jpg" alt="The Weeknd"/>
+                <div class="search-history-info">
+                    <div class="search-history-title">The Weeknd</div>
+                    <div class="search-history-subtitle">Artista</div>
+                </div>
+            </div>
+            <div class="search-history-item cursor-pointer" onclick="searchItem('Dollaz on my head')">
+                <img src="./imagenes/jiji.jpg" alt="Dollaz on my head"/>
+                <div class="search-history-info">
+                    <div class="search-history-title">Dollaz on my head</div>
+                    <div class="search-history-subtitle">Canción</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================
+        PANTALLA 4: NOTIFICACIONES
+    ======================================== -->
+    <div id="notificationsScreen" class="w-96 h-[812px] relative hidden">
+        <button onclick="showHome()" 
+                class="absolute left-[20px] top-[50px] w-8 h-8 flex items-center justify-center z-50">
+            <img class="w-6 h-6" 
+                 src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/back.svg" 
+                 alt="Volver"/>
+        </button>
+        <div class="left-[20px] top-[50px] absolute text-white text-2xl font-semibold">
+            Notificaciones
+        </div>
+        <button class="btn-mark-read absolute right-[20px] top-[55px]" onclick="markAllAsRead()">
+            Marcar todas como leídas
+        </button>
+        <div class="left-[20px] top-[100px] absolute w-[356px]">
+            <div class="notification-item unread cursor-pointer" onclick="openNotification('song')">
+                <div class="notification-icon music">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                    </svg>
+                </div>
+                <div class="notification-info">
+                    <div class="notification-title">Nueva canción disponible</div>
+                    <div class="notification-message">Gunna lanzó "Dollaz on my head"</div>
+                    <div class="notification-time">Hace 2 horas</div>
+                </div>
+            </div>
+            <div class="notification-item unread cursor-pointer" onclick="openNotification('update')">
+                <div class="notification-icon update">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    </svg>
+                </div>
+                <div class="notification-info">
+                    <div class="notification-title">Actualización de la app</div>
+                    <div class="notification-message">Nueva versión 2.0 disponible</div>
+                    <div class="notification-time">Hace 1 día</div>
+                </div>
+            </div>
+            <div class="notification-item unread cursor-pointer" onclick="openNotification('artist')">
+                <div class="notification-icon music">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div class="notification-info">
+                    <div class="notification-title">Artista recomendado</div>
+                    <div class="notification-message">The Weeknd basado en tus gustos</div>
+                    <div class="notification-time">Hace 3 días</div>
+                </div>
+            </div>
+            <div class="notification-item cursor-pointer" onclick="openNotification('playlist')">
+                <div class="notification-icon music">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18V5l12-2v13"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <circle cx="18" cy="16" r="3"/>
+                    </svg>
+                </div>
+                <div class="notification-info">
+                    <div class="notification-title">Playlist actualizada</div>
+                    <div class="notification-message">"Tus favoritos" tiene 5 canciones nuevas</div>
+                    <div class="notification-time">Hace 1 semana</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================
+        JAVASCRIPT
+    ======================================== -->
+    <script>
+        // ========================================
+        // ESTADO DE REPRODUCCIÓN
+        // ========================================
+        let isPlaying = false;
+        let isShuffle = false;
+        let isRepeat = false;
+
+        // ========================================
+        // CONTROLES DE REPRODUCCIÓN
+        // ========================================
+        function togglePlay(btn) {
+            const icon = btn.querySelector('#playIcon');
+            isPlaying = !isPlaying;
+            
+            if (isPlaying) {
+                icon.src = 'https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/pause.svg';
+            } else {
+                icon.src = 'https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg';
+            }
+        }
+
+        function skipBackward() { 
+            console.log('Skip: Canción anterior'); 
+        }
+
+        function skipForward() { 
+            console.log('Skip: Siguiente canción'); 
+        }
+
+        function toggleShuffle(btn) {
+            isShuffle = !isShuffle;
+            const img = btn.querySelector('img');
+            img.style.opacity = isShuffle ? '1' : '0.5';
+        }
+
+        function toggleRepeat(btn) {
+            isRepeat = !isRepeat;
+            const img = btn.querySelector('img');
+            img.style.opacity = isRepeat ? '1' : '0.5';
+        }
+
+        // ========================================
+        // EFECTO CAROUSEL
+        // ========================================
+        function setupCarousel(scrollContainerId) {
+            const container = document.getElementById(scrollContainerId);
+            if (!container) return;
+            
+            const cards = container.querySelectorAll('.album-card');
+            
+            function updateCenterCard() {
+                const containerRect = container.getBoundingClientRect();
+                const containerCenter = containerRect.left + containerRect.width / 2;
+                
+                cards.forEach(card => {
+                    const cardRect = card.getBoundingClientRect();
+                    const cardCenter = cardRect.left + cardRect.width / 2;
+                    const distance = Math.abs(containerCenter - cardCenter);
+                    
+                    card.classList.remove('center', 'adjacent', 'edge');
+                    
+                    if (distance < 80) {
+                        card.classList.add('center');
+                    } else if (distance < 180) {
+                        card.classList.add('adjacent');
+                    } else {
+                        card.classList.add('edge');
+                    }
+                });
+            }
+            
+            container.addEventListener('scroll', updateCenterCard);
+            updateCenterCard();
+        }
+
+        // ========================================
+        // INDICADOR ACTIVO
+        // ========================================
+        function setActiveNav(button, index) {
+            const indicator = document.getElementById('navIndicator');
+            if (!indicator) return;
+            
+            indicator.classList.add('moving');
+            
+            document.querySelectorAll('.nav-icon').forEach(icon => {
+                icon.classList.remove('active');
+            });
+            
+            if (button) {
+                button.classList.add('active');
+            }
+            
+            const positions = [40, 120, 200, 280];
+            indicator.style.left = positions[index] + 'px';
+            
+            setTimeout(() => {
+                indicator.classList.remove('moving');
+            }, 300);
+        }
+
+        // ========================================
+        // BÚSQUEDA
+        // ========================================
+        function searchItem(query) {
+            document.getElementById('searchInput').value = query;
+            console.log('Buscando:', query);
+        }
+
+        function clearSearchHistory() {
+            const historyItems = document.querySelectorAll('.search-history-item');
+            historyItems.forEach(item => item.remove());
+            console.log('Historial limpiado');
+        }
+
+        // ========================================
+        // NOTIFICACIONES
+        // ========================================
+        function openNotification(type) {
+            console.log('Abriendo notificación:', type);
+        }
+
+        function markAllAsRead() {
+            const notifications = document.querySelectorAll('.notification-item');
+            notifications.forEach(notification => {
+                notification.classList.remove('unread');
+            });
+            console.log('Todas las notificaciones marcadas como leídas');
+        }
+
+        // ========================================
+        // NAVEGACIÓN ENTRE PANTALLAS
+        // ========================================
+        
+        // Mostrar HOME
+        function showHome() {
+            document.getElementById('searchScreen').classList.add('hidden');
+            document.getElementById('notificationsScreen').classList.add('hidden');
+            document.getElementById('nowPlayingScreen').classList.add('hidden');
+            document.getElementById('homeScreen').classList.remove('hidden');
+            
+            const bottomNav = document.querySelector('.bottom-nav');
+            bottomNav.style.display = '';
+            bottomNav.classList.add('nav-showing');
+            bottomNav.classList.remove('nav-hiding');
+            
+            bottomNav.offsetHeight;
+            
+            setTimeout(() => {
+                bottomNav.classList.remove('nav-showing');
+                bottomNav.classList.add('nav-visible');
+                
+                const homeIcon = document.querySelectorAll('.nav-icon')[0];
+                if (homeIcon) {
+                    setActiveNav(homeIcon, 0);
+                }
+            }, 300);
+        }
+
+        // Mostrar BÚSQUEDA
+        function showSearch() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('notificationsScreen').classList.add('hidden');
+            document.getElementById('nowPlayingScreen').classList.add('hidden');
+            document.getElementById('searchScreen').classList.remove('hidden');
+            
+            document.querySelector('.bottom-nav').style.display = '';
+            
+            const exploreIcon = document.querySelectorAll('.nav-icon')[1];
+            if (exploreIcon) {
+                setActiveNav(exploreIcon, 1);
+            }
+        }
+
+        // Mostrar EXPLORAR
+        function showExplore() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('notificationsScreen').classList.add('hidden');
+            document.getElementById('nowPlayingScreen').classList.add('hidden');
+            document.getElementById('searchScreen').classList.remove('hidden');
+            
+            document.querySelector('.bottom-nav').style.display = '';
+            
+            const exploreIcon = document.querySelectorAll('.nav-icon')[1];
+            if (exploreIcon) {
+                setActiveNav(exploreIcon, 1);
+            }
+        }
+
+        // Mostrar NOTIFICACIONES
+        function showNotifications() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('searchScreen').classList.add('hidden');
+            document.getElementById('nowPlayingScreen').classList.add('hidden');
+            document.getElementById('notificationsScreen').classList.remove('hidden');
+            
+            document.querySelector('.bottom-nav').style.display = 'none';
+        }
+
+        // Mostrar NOW PLAYING (desde álbumes)
+        function showNowPlaying() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('nowPlayingScreen').classList.remove('hidden');
+            document.querySelector('.bottom-nav').style.display = 'none';
+        }
+
+        // IR A NOW PLAYING DESDE BOTTOM NAV
+        function showNowPlayingFromNav() {
+            const playIcon = document.querySelectorAll('.nav-icon')[2];
+            if (playIcon) {
+                setActiveNav(playIcon, 2);
+            }
+            
+            setTimeout(() => {
+                const bottomNav = document.querySelector('.bottom-nav');
+                bottomNav.classList.add('nav-hiding');
+                bottomNav.classList.remove('nav-visible');
+                
+                setTimeout(() => {
+                    document.getElementById('homeScreen').classList.add('hidden');
+                    document.getElementById('searchScreen').classList.add('hidden');
+                    document.getElementById('notificationsScreen').classList.add('hidden');
+                    document.getElementById('nowPlayingScreen').classList.remove('hidden');
+                }, 300);
+            }, 400);
+        }
+
+        // ========================================
+        // INICIALIZAR AL CARGAR
+        // ========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCarousel('mainAlbumsScroll');
+            setupCarousel('newReleasesScroll');
+        });
+    </script>
+</body>
+</html>
