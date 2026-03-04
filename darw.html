@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi App - Animada</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'lexend': ['Lexend', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* ========================================
+        CUERPO Y BASE
+        ======================================== */
+        body {
+            font-family: 'Lexend', sans-serif;
+            background: #000000;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* ========================================
+        VIEW TRANSITIONS API (MAGIA DE LAS ANIMACIONES)
+        ======================================== */
+        /* Configuración base para cross-fade suave */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation-duration: 0.4s;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Asignar nombres a los elementos para Container Transform */
+        .hero-album-image {
+            view-transition-name: album-cover;
+        }
+        
+        #nowPlayingScreen .rounded-\[31\.84px\] { /* La imagen grande en Now Playing */
+            view-transition-name: album-cover;
+        }
+
+        /* ========================================
+        OCULTAR SCROLLBAR
+        ======================================== */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ========================================
+        CAROUSEL
+        ======================================== */
+        #mainAlbumsScroll,
+        #newReleasesScroll {
+            overflow-x: auto;
+            overflow-y: visible !important;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-mask-image: 
+                linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%),
+                linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            mask-image: 
+                linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%),
+                linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            -webkit-mask-composite: intersect;
+            mask-composite: intersect;
+            padding: 40px;
+        }
+
+        /* ========================================
+        BOTONES CON EFECTO LÍQUIDO (Mantenidos igual)
+        ======================================== */
+        .btn-liquido {
+            position: relative;
+            background: transparent; 
+            border: none;
+            outline: none;
+            cursor: pointer;
+            overflow: visible;
+            transition: transform 0.2s ease;
+        }
+        .btn-liquido::before {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(82, 82, 91, 0.6) 0%, rgba(63, 63, 70, 0.3) 35%, rgba(39, 39, 42, 0.2) 50%, rgba(24, 24, 27, 0.4) 65%, rgba(82, 82, 91, 0.6) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: liquido-1 4s ease-in-out infinite;
+            z-index: 0;
+            filter: blur(4px);
+        }
+        .btn-liquido::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            background: linear-gradient(225deg, rgba(113, 113, 122, 0.4) 0%, rgba(63, 63, 70, 0.2) 50%, rgba(82, 82, 91, 0.3) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: liquido-2 5s ease-in-out infinite;
+            z-index: 0;
+            filter: blur(3px);
+        }
+        .btn-play-album, .btn-play-album-new {
+            position: absolute; right: 15px; width: 40px; height: 40px; opacity: 0; transform: scale(0.5); pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+            border-radius: 50%; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center;
+        }
+        .btn-play-album { top: 15px; }
+        .btn-play-album-new { bottom: 10px; }
+        
+        .album-card.center .btn-play-album,
+        .album-card.center .btn-play-album-new { opacity: 1; transform: scale(1); pointer-events: auto; }
+        
+        .btn-play-album img, .btn-play-album-new img { filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.3)); }
+        .btn-play-album img { width: 22px; height: 22px; }
+        .btn-play-album-new img { width: 16px; height: 16px; }
+
+        .album-card.center .btn-play-album:hover,
+        .album-card.center .btn-play-album-new:hover { transform: scale(1.1); }
+
+        @keyframes liquido-1 {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+        @keyframes liquido-2 {
+            0%, 100% { transform: rotate(180deg) scale(1); }
+            50% { transform: rotate(360deg) scale(1.05); }
+        }
+        .btn-liquido:hover::before, .btn-liquido:hover::after { opacity: 1; }
+        .btn-liquido:hover { transform: scale(1.15); }
+        .btn-sutil::before { background: linear-gradient(135deg, rgba(82, 82, 91, 0.4) 0%, rgba(63, 63, 70, 0.2) 35%, rgba(39, 39, 42, 0.1) 50%, rgba(24, 24, 27, 0.3) 65%, rgba(82, 82, 91, 0.4) 100%); }
+        .btn-sutil::after { background: linear-gradient(225deg, rgba(113, 113, 122, 0.2) 0%, rgba(63, 63, 70, 0.1) 50%, rgba(82, 82, 91, 0.2) 100%); }
+
+        .btn-play {
+            position: relative; background: #27272a; border: none; outline: none; cursor: pointer; overflow: hidden; border-radius: 50%;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+        }
+        .btn-play::before, .btn-play::after {
+            content: ''; position: absolute; border-radius: 50%; opacity: 0; transition: opacity 0.5s ease; z-index: 0;
+        }
+        .btn-play::before {
+            inset: -50%; background: linear-gradient(135deg, rgba(82, 82, 91, 0.7) 0%, rgba(63, 63, 70, 0.4) 35%, rgba(39, 39, 42, 0.3) 50%, rgba(24, 24, 27, 0.5) 65%, rgba(82, 82, 91, 0.7) 100%);
+            animation: liquido-1 4s ease-in-out infinite;
+        }
+        .btn-play::after {
+            inset: -35%; background: linear-gradient(225deg, rgba(113, 113, 122, 0.5) 0%, rgba(63, 63, 70, 0.3) 50%, rgba(82, 82, 91, 0.5) 100%);
+            animation: liquido-2 5s ease-in-out infinite;
+        }
+        .btn-play:hover::before, .btn-play:hover::after { opacity: 1; }
+        .btn-play:hover { transform: scale(1.15); box-shadow: 0 0 20px rgba(255, 134, 117, 0.2), 0 0 35px rgba(255, 134, 117, 0.1); }
+        .btn-play:active { transform: scale(0.95); }
+
+        .btn-header { position: relative; background: transparent; border: none; outline: none; cursor: pointer; overflow: visible; transition: transform 0.2s ease; }
+        .btn-header::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; background: linear-gradient(135deg, rgba(82, 82, 91, 0.5) 0%, rgba(63, 63, 70, 0.2) 50%, rgba(82, 82, 91, 0.5) 100%); opacity: 0; transition: opacity 0.3s ease; z-index: 0; filter: blur(3px); }
+        .btn-header:hover::before { opacity: 1; }
+        .btn-header:hover { transform: scale(1.1); }
+
+        /* ========================================
+        TARJETAS DE ÁLBUMES
+        ======================================== */
+        .album-card {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, filter 0.4s ease;
+            transform: scale(0.92); opacity: 0.85; filter: brightness(0.85); border-radius: 36px;
+        }
+        .album-card.center {
+            transform: scale(1.1); opacity: 1; filter: brightness(1) drop-shadow(0 0 70px rgba(255, 134, 117, 0.30)); z-index: 50; position: relative;
+        }
+        .album-card.adjacent { transform: scale(0.92); opacity: 0.85; filter: brightness(0.85); }
+        .album-card.edge { transform: scale(0.85); opacity: 0.5; filter: brightness(0.6); }
+
+        /* ========================================
+        CONTENEDORES Y PANTALLAS (Mejorado para animaciones)
+        ======================================== */
+        /* Eliminamos el display:none abrupto y usamos opacidad/transform para Forward/Backward */
+        .screen-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Estado inactivo general (desaparecido y ligeramente escalado) */
+        .screen-hidden {
+            opacity: 0 !important;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Forward/Backward: Cuando vas a otra página (desliza un poco y desvanece) */
+        .screen-backward {
+            transform: scale(0.95);
+        }
+        /* Entrada desde abajo (Enter/Exit) */
+        .screen-slide-up {
+            transform: translateY(30px);
+        }
+
+        #homeScreen { background: transparent !important; overflow: visible !important; z-index: 10;}
+        #nowPlayingScreen { background: #171717; overflow: hidden; z-index: 20;}
+        #searchScreen { background: #000000; overflow: hidden; z-index: 15;}
+        #notificationsScreen { background: #000000; overflow: hidden; z-index: 30;} /* Nivel más alto */
+
+        /* ========================================
+        BOTTOM NAVIGATION BAR
+        ======================================== */
+        .bottom-nav {
+            position: fixed; bottom: 0px; left: 20px; width: 356px; height: 80px;
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px 20px 0 0; z-index: 100;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            transform: translateY(0); opacity: 1;
+        }
+        .bottom-nav.nav-hidden {
+            transform: translateY(100%); opacity: 0; pointer-events: none;
+        }
+
+        .nav-indicator {
+            position: absolute; top: 0px; width: 40px; height: 4px; background: linear-gradient(to right, #FFFFFF 0%, #FFFFFF 100%);
+            border-radius: 0 0 20px 20px; box-shadow: 0 4px 20px 3px rgba(255, 255, 255, 0.5);
+            transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        }
+        .nav-indicator.moving { box-shadow: 0 2px 4px rgba(255, 255, 255, 0.2); }
+
+        .nav-icon { position: absolute; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        .nav-icon .icon-active, .nav-icon .icon-inactive { position: absolute; width: 24px; height: 24px; transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-icon .icon-inactive { opacity: 0.5; transform: scale(1); filter: grayscale(100%); }
+        .nav-icon .icon-active { opacity: 0; transform: scale(0.8); filter: grayscale(0%); }
+        .nav-icon.active .icon-inactive { opacity: 0; transform: scale(0.8); }
+        .nav-icon.active .icon-active { opacity: 1; transform: scale(1); }
+
+        /* ========================================
+        COMPONENTES EXTRAS (Búsqueda, Notis)
+        ======================================== */
+        /* ... (El CSS de Búsqueda y Notificaciones se mantiene igual que en tu original) ... */
+        .search-bar { position: relative; background: rgba(39, 39, 42, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .search-bar input { width: 100%; background: transparent; border: none; outline: none; color: #ffffff; font-family: 'Lexend', sans-serif; font-size: 14px; padding: 12px 12px 12px 40px; }
+        .search-bar input::placeholder { color: rgba(255, 255, 255, 0.5); }
+        .search-bar svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: rgba(255, 255, 255, 0.5); }
+        .search-history-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.2s ease; }
+        .search-history-item:hover { background: rgba(255, 255, 255, 0.05); border-radius: 8px; }
+        .search-history-item img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+        .search-history-info { flex: 1; }
+        .search-history-title { color: #ffffff; font-size: 14px; font-weight: 500; }
+        .search-history-subtitle { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+        .btn-clear-history { color: rgba(255, 255, 255, 0.5); font-size: 12px; background: transparent; border: none; cursor: pointer; transition: color 0.2s ease; }
+        .btn-clear-history:hover { color: #ffffff; }
+
+        .notification-item { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.2s ease; position: relative; }
+        .notification-item:hover { background: rgba(255, 255, 255, 0.05); border-radius: 12px; }
+        .notification-item.unread::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 4px; background: #FF8675; border-radius: 50%; }
+        .notification-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .notification-icon.music { background: linear-gradient(135deg, rgba(255, 134, 117, 0.3) 0%, rgba(255, 107, 157, 0.3) 100%); }
+        .notification-icon.update { background: linear-gradient(135deg, rgba(107, 157, 255, 0.3) 0%, rgba(107, 255, 184, 0.3) 100%); }
+        .notification-icon svg { width: 24px; height: 24px; color: #ffffff; }
+        .notification-info { flex: 1; }
+        .notification-title { color: #ffffff; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .notification-message { color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+        .notification-time { color: rgba(255, 255, 255, 0.3); font-size: 11px; }
+        .btn-mark-read { color: rgba(255, 255, 255, 0.5); font-size: 12px; background: transparent; border: none; cursor: pointer; transition: color 0.2s ease; }
+        .btn-mark-read:hover { color: #ffffff; }
+
+    </style>
+</head>
+<body class="bg-black font-lexend relative w-[396px] h-[812px] mx-auto overflow-hidden">
+    <div id="homeScreen" class="screen-container w-96 h-[812px]">
+        <div class="left-[20px] top-[45px] absolute text-stone-300 text-base font-normal">Good Evening</div>
+        <div class="left-[20px] top-[71px] absolute text-white text-xl font-medium">Urvashi</div>
+        <div class="w-6 h-6 left-[110px] top-[73px] absolute">
+            <img class="w-6 h-6" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/pollo.svg" alt="Perfil"/>
+        </div>
+
+        <button class="btn-header absolute left-[283px] top-[61px] w-6 h-6 flex items-center justify-center" onclick="navigate('searchScreen', 1)">
+            <img class="w-5 h-5" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/busqueda.svg" alt="Buscar"/>
+        </button>
+        <button class="btn-header absolute left-[331px] top-[61px] w-6 h-6 flex items-center justify-center" onclick="navigate('notificationsScreen')">
+            <img class="w-5 h-5" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/noti.svg" alt="Notificaciones"/>
+        </button>
+
+        <div class="left-[20px] top-[135px] absolute text-neutral-400 text-base font-light">Podcasts</div>
+        <div class="left-[154px] top-[130px] absolute text-neutral-200 text-2xl font-semibold">Music</div>
+        <div class="left-[308px] top-[135px] absolute text-neutral-400 text-base font-light">ASMR</div>
+
+        <div class="left-[20px] top-[200px] absolute">
+            <div class="flex gap-4 overflow-x-auto w-[356px] h-[290px] scrollbar-hide" id="mainAlbumsScroll">
+
+                <div class="album-card flex-shrink-0 w-[191px] h-[202px] relative cursor-pointer" onclick="openNowPlaying(this)">
+                    <img class="w-[191px] h-[202px] object-cover rounded-[36px] hero-album-image" src="./imagenes/maa.jpg" alt="Album"/>
+                    <div class="absolute bottom-0 left-[0px] w-[191px] h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[18px] bottom-[25px] whitespace-nowrap">Dollaz on my head</div>
+                        <div class="text-neutral-400 text-xs absolute left-[18px] bottom-[8px] whitespace-nowrap">Gunna</div>
+                    </div>
+                    <button class="btn-play-album absolute right-[15px] top-[15px] w-10 h-10 bg-gradient-to-b from-zinc-950/50 to-zinc-700/0 rounded-full backdrop-blur-md flex items-center justify-center btn-liquido" onclick="openNowPlaying(this.parentElement); event.stopPropagation();">
+                        <img class="w-5 h-5" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" alt="Play"/>
+                    </button>
+                </div>
+                <div class="album-card flex-shrink-0 w-[191px] h-[202px] relative cursor-pointer" onclick="openNowPlaying(this)">
+                    <img class="w-[191px] h-[202px] object-cover rounded-[36px] hero-album-image" src="./imagenes/jiji.jpg" alt="Album"/>
+                    <div class="absolute bottom-0 left-[0px] w-[191px] h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[18px] bottom-[25px] whitespace-nowrap">Dollaz on my head</div>
+                        <div class="text-neutral-400 text-xs absolute left-[18px] bottom-[8px] whitespace-nowrap">Gunna</div>
+                    </div>
+                    <button class="btn-play-album absolute right-[15px] top-[15px] w-10 h-10 bg-gradient-to-b from-zinc-950/50 to-zinc-700/0 rounded-full backdrop-blur-md flex items-center justify-center btn-liquido" onclick="openNowPlaying(this.parentElement); event.stopPropagation();">
+                        <img class="w-5 h-5" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" alt="Play"/>
+                    </button>
+                </div>
+                <div class="album-card flex-shrink-0 w-[191px] h-[202px] relative cursor-pointer" onclick="openNowPlaying(this)">
+                    <img class="w-[191px] h-[202px] object-cover rounded-[36px]" src="./imagenes/piza.jpg" alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-[191px] h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[18px] bottom-[25px] whitespace-nowrap">Car Sick</div>
+                        <div class="text-neutral-400 text-xs absolute left-[18px] bottom-[8px] whitespace-nowrap">Gunna</div>
+                    </div>
+                    <button class="btn-play-album absolute right-[15px] top-[15px] w-10 h-10 bg-gradient-to-b from-zinc-950/50 to-zinc-700/0 rounded-full backdrop-blur-md flex items-center justify-center btn-liquido" onclick="openNowPlaying(this.parentElement); event.stopPropagation();">
+                        <img class="w-5 h-5" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" alt="Play"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="left-[20px] top-[500px] absolute">
+            <div class="text-neutral-200 text-2xl font-semibold mb-4">New Releases</div>
+            <div class="flex gap-4 overflow-x-auto w-[356px] h-[280px] scrollbar-hide" id="newReleasesScroll">
+                <div class="album-card flex-shrink-0 w-48 h-52 relative cursor-pointer" onclick="openNowPlaying(this)">
+                    <img class="w-48 h-52 object-cover rounded-[36px]" src="./imagenes/emm.jpg" alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-48 h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[20px] bottom-[28px] whitespace-nowrap">Out of time</div>
+                        <div class="text-neutral-400 text-xs absolute left-[20px] bottom-[10px] whitespace-nowrap">The Weeknd</div>
+                    </div>
+                </div>
+                <div class="album-card flex-shrink-0 w-48 h-52 relative cursor-pointer" onclick="openNowPlaying(this)">
+                    <img class="w-48 h-52 object-cover rounded-[36px]" src="./imagenes/emm.jpg" alt="Album"/>
+                    <div class="absolute bottom-0 left-0 w-48 h-14 bg-black/40 backdrop-blur-md rounded-b-[36px] border-t border-white/10">
+                        <div class="text-white text-sm font-medium absolute left-[20px] bottom-[28px] whitespace-nowrap">Out of time</div>
+                        <div class="text-neutral-400 text-xs absolute left-[20px] bottom-[10px] whitespace-nowrap">The Weeknd</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="h-[900px]"></div>
+    </div>
+
+    <div id="searchScreen" class="screen-container screen-hidden screen-slide-up w-96 h-[812px]">
+        <button onclick="navigate('homeScreen', 0)" class="absolute left-[20px] top-[50px] w-8 h-8 flex items-center justify-center z-50">
+            <img class="w-6 h-6" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/back.svg" alt="Volver"/>
+        </button>
+        <div class="left-[20px] top-[50px] absolute text-white text-2xl font-semibold pl-10">Buscar</div>
+        
+        <div class="left-[20px] top-[100px] absolute w-[356px] search-bar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" placeholder="Artistas, canciones, álbumes..." id="searchInput"/>
+        </div>
+    </div>
+
+    <div id="notificationsScreen" class="screen-container screen-hidden screen-slide-up w-96 h-[812px]">
+        <button onclick="navigate('homeScreen', 0)" class="absolute left-[20px] top-[50px] w-8 h-8 flex items-center justify-center z-50">
+            <img class="w-6 h-6" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/back.svg" alt="Volver"/>
+        </button>
+        <div class="left-[20px] top-[50px] absolute text-white text-2xl font-semibold pl-10">Notificaciones</div>
+        <button class="btn-mark-read absolute right-[20px] top-[55px]" onclick="markAllAsRead()">Marcar todas como leídas</button>
+        
+        <div class="left-[20px] top-[100px] absolute w-[356px]">
+            <div class="notification-item unread cursor-pointer">
+                <div class="notification-icon music">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                </div>
+                <div class="notification-info">
+                    <div class="notification-title">Nueva canción disponible</div>
+                    <div class="notification-message">Gunna lanzó "Dollaz on my head"</div>
+                    <div class="notification-time">Hace 2 horas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="nowPlayingScreen" class="screen-container screen-hidden screen-slide-up w-96 h-[812px]">
+        <button onclick="navigate('homeScreen', 0)" class="absolute left-[20px] top-[50px] w-8 h-8 flex items-center justify-center z-50">
+            <img class="w-6 h-6" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/back.svg" alt="Volver"/>
+        </button>
+        
+        <img class="w-64 h-72 left-[58px] top-[109px] absolute rounded-[31.84px]" id="npImage" src="./imagenes/jiji.jpg" alt="Album"/>
+        
+        <div class="left-[105px] top-[441px] absolute text-white text-2xl font-semibold" id="npTitle">Bank Account</div>
+        <div class="left-[144px] top-[476px] absolute text-white text-lg font-normal" id="npArtist">21 Savage</div>
+        
+        <div class="w-[340px] h-1 left-[28px] top-[600px] absolute bg-zinc-700 rounded-full">
+            <div class="h-full w-[35%] bg-gradient-to-r from-white to-white/60 rounded-full"></div>
+        </div>
+        <div class="left-[18px] top-[620px] absolute text-neutral-400 text-xs">01:35</div>
+        <div class="left-[328px] top-[620px] absolute text-neutral-400 text-xs">-02:32</div>
+
+        <div class="w-96 h-24 left-0 top-[660px] absolute bg-zinc-900/50 backdrop-blur-md border-t border-white/10">
+            <button class="btn-play absolute left-[221px] top-[48px] w-16 h-16 flex items-center justify-center -translate-x-1/2 -translate-y-1/2" onclick="togglePlay(this)">
+                <img id="playIcon" class="w-8 h-8" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg" alt="Play"/>
+            </button>
+        </div>
+    </div>
+
+    <div class="bottom-nav h-[75px]" id="mainBottomNav">
+        <div class="nav-indicator" id="navIndicator" style="left: 40px;"></div>
+        
+        <button class="nav-icon active absolute left-[40px] top-[10px] w-10 h-10 flex items-center justify-center" onclick="navigate('homeScreen', 0)">
+            <img class="w-6 h-6 icon-active" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/2-homeB11.svg"/>
+            <img class="w-6 h-6 icon-inactive" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/2-home-11.svg"/>
+        </button>
+
+        <button class="nav-icon absolute left-[120px] top-[10px] w-10 h-10 flex items-center justify-center" onclick="navigate('searchScreen', 1)">
+            <img class="w-6 h-6 icon-active" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/42-exploreB.svg"/>
+            <img class="w-6 h-6 icon-inactive" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/42-explore.svg"/>
+        </button>
+
+        <button class="nav-icon absolute left-[200px] top-[10px] w-10 h-10 flex items-center justify-center" onclick="navigate('nowPlayingScreen', 2)">
+            <img class="w-6 h-6 icon-active" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/30-playB.svg"/>
+            <img class="w-6 h-6 icon-inactive" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/30-play.svg"/>
+        </button>
+
+        <button class="nav-icon absolute left-[280px] top-[10px] w-10 h-10 flex items-center justify-center" onclick="setActiveNav(this, 3)">
+            <img class="w-6 h-6 icon-active" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/11-profileB.svg"/>
+            <img class="w-6 h-6 icon-inactive" src="https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/94b2cb5a7b3bd2041cb4efda9204a7b981d2bc41/11-profile.svg"/>
+        </button>
+    </div>
+
+    <script>
+        // Lógica del Carousel (se mantiene igual)
+        function setupCarousel(scrollContainerId) {
+            const container = document.getElementById(scrollContainerId);
+            if (!container) return;
+            const cards = container.querySelectorAll('.album-card');
+            
+            function updateCenterCard() {
+                const containerRect = container.getBoundingClientRect();
+                const containerCenter = containerRect.left + containerRect.width / 2;
+                
+                cards.forEach(card => {
+                    const cardRect = card.getBoundingClientRect();
+                    const cardCenter = cardRect.left + cardRect.width / 2;
+                    const distance = Math.abs(containerCenter - cardCenter);
+                    
+                    card.classList.remove('center', 'adjacent', 'edge');
+                    if (distance < 80) card.classList.add('center');
+                    else if (distance < 180) card.classList.add('adjacent');
+                    else card.classList.add('edge');
+                });
+            }
+            container.addEventListener('scroll', updateCenterCard);
+            updateCenterCard();
+        }
+
+        // Lógica del Bottom Nav (se mantiene igual)
+        function setActiveNav(button, index) {
+            if(!button) return;
+            const indicator = document.getElementById('navIndicator');
+            indicator.classList.add('moving');
+            
+            document.querySelectorAll('.nav-icon').forEach(icon => icon.classList.remove('active'));
+            button.classList.add('active');
+            
+            const positions = [40, 120, 200, 280];
+            indicator.style.left = positions[index] + 'px';
+            setTimeout(() => indicator.classList.remove('moving'), 300);
+        }
+
+        // ==========================================
+        // SISTEMA DE NAVEGACIÓN CON TRANSICIONES M3
+        // ==========================================
+        const screens = ['homeScreen', 'searchScreen', 'notificationsScreen', 'nowPlayingScreen'];
+
+        function performNavigation(targetScreenId, navIndex = null) {
+            // Determinar si debemos ocultar el navbar (si vamos a Notis o Now Playing)
+            const bottomNav = document.getElementById('mainBottomNav');
+            const hideNav = (targetScreenId === 'nowPlayingScreen' || targetScreenId === 'notificationsScreen');
+
+            // 1. Ocultar todas las pantallas (quitar opacidad y mover)
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id !== targetScreenId && !el.classList.contains('screen-hidden')) {
+                    // Si estamos saliendo de home, hace un ligero scale (Backward)
+                    if(id === 'homeScreen') {
+                        el.classList.add('screen-backward');
+                        setTimeout(() => el.classList.add('screen-hidden'), 400); // Dar tiempo a la animación CSS
+                    } else {
+                        // Si salimos de una pantalla que deslizó, la volvemos a deslizar
+                        el.classList.add('screen-slide-up');
+                        el.classList.add('screen-hidden');
+                    }
+                }
+            });
+
+            // 2. Mostrar la pantalla objetivo
+            const targetEl = document.getElementById(targetScreenId);
+            targetEl.classList.remove('screen-hidden');
+            
+            // Forzamos un reflow para que el navegador registre que se quitó el hidden antes de quitar las clases de animación
+            void targetEl.offsetWidth; 
+            
+            targetEl.classList.remove('screen-backward', 'screen-slide-up');
+
+            // 3. Manejar Bottom Nav (Enter / Exit)
+            if (hideNav) {
+                bottomNav.classList.add('nav-hidden');
+            } else {
+                bottomNav.classList.remove('nav-hidden');
+                if(navIndex !== null) {
+                    setActiveNav(document.querySelectorAll('.nav-icon')[navIndex], navIndex);
+                }
+            }
+        }
+
+        // Función principal de navegación
+        function navigate(targetScreenId, navIndex = null) {
+            // Verificar si el navegador soporta View Transitions API
+            if (!document.startViewTransition) {
+                // Fallback si no hay soporte (usamos solo nuestras animaciones CSS)
+                performNavigation(targetScreenId, navIndex);
+                return;
+            }
+
+            // Iniciar la transición nativa suave (Cross-fade / Top level transition)
+            document.startViewTransition(() => {
+                performNavigation(targetScreenId, navIndex);
+            });
+        }
+
+        // ==========================================
+        // CONTAINER TRANSFORM: Abrir Now Playing desde Tarjeta
+        // ==========================================
+        function openNowPlaying(cardElement) {
+            // Extraer info de la tarjeta
+            const imgEl = cardElement.querySelector('img');
+            const titleEl = cardElement.querySelector('.text-white');
+            const artistEl = cardElement.querySelector('.text-neutral-400');
+
+            // Setear la info en la pantalla Now Playing
+            document.getElementById('npImage').src = imgEl.src;
+            document.getElementById('npTitle').innerText = titleEl.innerText;
+            document.getElementById('npArtist').innerText = artistEl.innerText;
+
+            // Para que la View Transition de Container Transform funcione, 
+            // le quitamos el nombre a todas las imágenes, y se lo ponemos SOLO a la que clickeamos
+            document.querySelectorAll('.hero-album-image').forEach(el => {
+                el.style.viewTransitionName = 'none'; 
+            });
+            imgEl.style.viewTransitionName = 'album-cover';
+
+            // Navegar
+            navigate('nowPlayingScreen', 2);
+        }
+
+        // Control de Play (mantenido)
+        let isPlaying = false;
+        function togglePlay(btn) {
+            const icon = btn.querySelector('#playIcon');
+            isPlaying = !isPlaying;
+            icon.src = isPlaying 
+                ? 'https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/pause.svg'
+                : 'https://raw.githubusercontent.com/Darlyn1432546/Darlyn-G/03c748171c0e7766a11004b2a64e8c650c9d9526/play.svg';
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCarousel('mainAlbumsScroll');
+            setupCarousel('newReleasesScroll');
+        });
+
+    </script>
+</body>
+</html>
