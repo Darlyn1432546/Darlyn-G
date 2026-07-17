@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copia los archivos de dependencias
 COPY pubspec.* ./
-RUN dart pub get
+RUN dart pub get --no-dev
 
 # Copia el resto del código
 COPY . .
