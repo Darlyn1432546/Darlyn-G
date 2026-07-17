@@ -11,22 +11,23 @@ RUN dart pub get
 # Copia el resto del código
 COPY . .
 
-# Compila el servidor a un ejecutable (opcional, pero recomendado para producción)
+# Compila el servidor a un ejecutable
 RUN dart compile exe bin/server.dart -o bin/server
 
 # Usa una imagen más ligera para la ejecución
 FROM debian:stable-slim
-RUN apt-get update && apt-get install -y \
+# Instalamos solo los certificados necesarios para conexiones HTTPS
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
-# Copia el ejecutable compilado
+# Copia el ejecutable compilado desde la etapa "build"
 COPY --from=build /app/bin/server /server
 
 # Expone el puerto que usa tu servidor
 EXPOSE 8081
 
-# Variables de entorno (se pueden pasar en Railway)
+# Variables de entorno
 ENV PORT=8081
 
 # Ejecuta el servidor
