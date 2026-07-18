@@ -1,27 +1,26 @@
-# 1. Usamos la imagen con Flutter SDK
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
-# 2. Variable para forzar rebuild (cambia el '1' a '2' si falla de nuevo)
+# 1. Definimos una variable de caché (cambia a 2 si sigue fallando)
 ARG CACHEBUST=1
 
-# 3. Copiamos solo el YAML (SIN el lockfile)
-COPY pubspec.yaml ./
+# 2. Copiamos solo los archivos de dependencias
+COPY pubspec.yaml pubspec.lock ./
 
-# 4. Instalamos dependencias y GENERAMOS un lockfile nuevo en Linux
+# 3. Instalamos dependencias en Linux (esto crea rutas de Linux)
 RUN flutter pub get
 
-# 5. Copiamos todo el código fuente
-COPY . .
+# 4. AQUÍ ESTÁ EL CAMBIO: No copies todo. Copia solo lo que necesitas.
+# Esto evita que las carpetas "sucias" de Windows entren al contenedor.
+COPY lib/ lib/
+COPY assets/ assets/
+# Si tienes una carpeta bin en la raíz, descomenta la línea de abajo:
+# COPY bin/ bin/
 
-# 6. LIMPIEZA NUCLEAR: Borramos cualquier rastro de .dart_tool que pudo entrar
-# y regeneramos el entorno de nuevo
-RUN rm -rf .dart_tool/ && flutter pub get
-
-# 7. Compilamos
+# 5. Compilamos
 RUN dart compile exe lib/server/bin/server.dart -o bin/server
 
-# Segunda etapa: Imagen ligera de ejecución
+# Segunda etapa: Imagen ligera
 FROM debian:stable-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
