@@ -14,7 +14,8 @@ COPY . .
 # Compila el servidor (Si es un proyecto Flutter de servidor/backend)
 # Nota: Si es solo un backend en Dart, puedes usar 'dart compile exe'. 
 # Si es una app de Flutter completa, el build process cambia.
-RUN dart compile exe bin/server.dart -o bin/server
+# Cambia esta línea:
+RUN dart compile exe lib/server/bin/server.dart -o bin/server
 
 # Usa una imagen ligera para la ejecución final
 FROM debian:stable-slim
@@ -31,3 +32,4 @@ ENV PORT=8081
 
 # Ejecuta el servidor
 CMD ["/server"]
+# trigger redeploy
