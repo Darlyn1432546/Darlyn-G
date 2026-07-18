@@ -11,5 +11,5 @@ macos/
 windows/
 web/
 *.log
-.DS_Store
-Thumbs.db
+package_config.json
+.packages

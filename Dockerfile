@@ -1,30 +1,24 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
-# 1. Copiamos solo los archivos de dependencias
+# 1. Forzamos a Docker a no usar caché para esta capa
+ARG CACHEBUST=1
+
+# 2. Copiamos solo lo esencial
 COPY pubspec.yaml pubspec.lock ./
-
-# 2. Eliminamos cualquier rastro de configuración local de Windows antes de hacer el pub get
-RUN rm -rf .dart_tool/ package_config.json
-
-# 3. Instalamos dependencias limpias
 RUN flutter pub get
 
-# 4. Copiamos el resto del código
-COPY . .
+# 3. Copiamos solo las carpetas de código (NO copies todo con COPY . .)
+COPY lib/ lib/
+COPY bin/ bin/
+COPY assets/ assets/
 
-# 5. ELIMINACIÓN CRÍTICA: Borramos la carpeta .dart_tool que pudo haber venido con el COPY . .
-# y forzamos la regeneración de configuración de Linux.
-RUN rm -rf .dart_tool/ && rm -f package_config.json && flutter pub get
+# 4. Compilamos
+RUN dart compile exe bin/server.dart -o bin/server
 
-# 6. Compilamos el servidor
-RUN dart compile exe lib/server/bin/server.dart -o bin/server
-
-# Segunda etapa: Imagen ligera
+# Segunda etapa
 FROM debian:stable-slim
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/bin/server /server
 EXPOSE 8081
 ENV PORT=8081

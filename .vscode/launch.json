@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "flutter_app_music",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d", "web-server",
+                "--web-port", "8080",
+                "--web-experimental-hot-reload"
+            ]
+        },
+        {
+            "name": "flutter_app_music (debug)",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "flutter_app_music (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "flutter_app_music (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
