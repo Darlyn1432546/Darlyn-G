@@ -1,15 +1,17 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
-# 1. Copiamos solo el yaml (sin el lock para evitar rutas de Windows)
 COPY pubspec.yaml ./
-# 2. Generamos un nuevo lockfile limpio dentro del contenedor
 RUN flutter pub get
 
-# 3. Copiamos el resto
 COPY . .
 
-# 4. Compilamos
+# --- AÑADE ESTO: Limpieza definitiva ---
+# Borramos todo rastro de configuración de Windows que se haya copiado
+RUN rm -rf .dart_tool && rm -f package_config.json
+# --------------------------------------
+
+# Compilamos
 RUN dart compile exe lib/server/bin/server.dart -o bin/server
 
 FROM debian:stable-slim
