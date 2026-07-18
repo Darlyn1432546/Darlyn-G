@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copia los archivos de dependencias
 COPY pubspec.* ./
-RUN flutter pub get --no-dev
+RUN flutter pub get
 
 # Copia el resto del código
 COPY . .
