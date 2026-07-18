@@ -1,22 +1,24 @@
-# Usamos la imagen oficial de Dart (mucho más ligera y limpia)
-FROM dart:stable AS build
+# 1. Usamos la imagen con Flutter SDK
+FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
-# 1. Copiamos los archivos de dependencias
-COPY pubspec.yaml pubspec.lock ./
+# 2. Variable para forzar rebuild (cambia el '1' a '2' si falla de nuevo)
+ARG CACHEBUST=1
 
-# 2. Instalamos dependencias limpias en un entorno Dart puro
-RUN dart pub get
+# 3. Copiamos solo el YAML (SIN el lockfile)
+COPY pubspec.yaml ./
 
-# 3. Copiamos solo el código necesario
-COPY lib/ lib/
-COPY assets/ assets/
+# 4. Instalamos dependencias y GENERAMOS un lockfile nuevo en Linux
+RUN flutter pub get
 
-# 4. Limpiamos cualquier rastro de .dart_tool y regeneramos
-# Esto obliga a generar nuevas rutas internas de Linux
-RUN rm -rf .dart_tool/ .packages && dart pub get
+# 5. Copiamos todo el código fuente
+COPY . .
 
-# 5. Compilamos
+# 6. LIMPIEZA NUCLEAR: Borramos cualquier rastro de .dart_tool que pudo entrar
+# y regeneramos el entorno de nuevo
+RUN rm -rf .dart_tool/ && flutter pub get
+
+# 7. Compilamos
 RUN dart compile exe lib/server/bin/server.dart -o bin/server
 
 # Segunda etapa: Imagen ligera de ejecución
