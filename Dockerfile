@@ -2,20 +2,22 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
-# 1. Copiamos solo los archivos de configuración
+# 1. Definimos una variable de caché (cambia el número 1 a 2, 3, etc., si sigue fallando)
+ARG CACHEBUST=1
+
+# 2. Copiamos solo los archivos de configuración
 COPY pubspec.yaml pubspec.lock ./
 
-# 2. Instalamos dependencias limpias
-RUN flutter pub get
+# 3. Limpiamos cualquier rastro antes de instalar
+RUN rm -rf .dart_tool/ && flutter pub get
 
-# 3. Copiamos SOLO la carpeta lib (donde está todo tu código, incluido el server)
+# 4. Copiamos el código
 COPY lib/ lib/
-
-# 4. Copiamos assets si los necesitas
 COPY assets/ assets/
 
-# 5. Compilamos el servidor apuntando a la ruta real de tu archivo
-RUN dart compile exe lib/server/bin/server.dart -o bin/server
+# 5. Compilamos el servidor
+# Forzamos una última limpieza antes de compilar
+RUN rm -rf .dart_tool/ && flutter pub get && dart compile exe lib/server/bin/server.dart -o bin/server
 
 # Segunda etapa: Imagen ligera
 FROM debian:stable-slim
