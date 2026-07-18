@@ -2,6 +2,8 @@
 .git/
 .gitignore
 .packages
+.pub-cache/
+.pub/
 build/
 android/
 ios/
@@ -10,3 +12,5 @@ macos/
 windows/
 web/
 *.log
+# AGREGA ESTA LÍNEA:
+pubspec.lock

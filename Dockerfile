@@ -1,23 +1,16 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
-# 1. Copiamos los archivos de dependencias
-COPY pubspec.yaml pubspec.lock ./
+# 1. Copiamos SOLO el yaml (sin el .lock de Windows)
+COPY pubspec.yaml ./
 
-# 2. Descargamos dependencias limpias
+# 2. Descargamos dependencias: Esto creará un pubspec.lock nuevo y limpio en Linux
 RUN flutter pub get
 
-# 3. Copiamos todo el código
+# 3. Copiamos el resto del código
 COPY . .
 
-# 4. LIMPIEZA FORZADA: Borramos cualquier rastro de Windows
-# Esto elimina los archivos que apuntan a tu Disco C:\
-RUN rm -rf .dart_tool && rm -f package_config.json .packages
-
-# 5. Regeneramos la configuración dentro del contenedor (por si acaso)
-RUN flutter pub get
-
-# 6. Compilamos
+# 4. Compilamos
 RUN dart compile exe lib/server/bin/server.dart -o bin/server
 
 # Segunda etapa: Imagen ligera
