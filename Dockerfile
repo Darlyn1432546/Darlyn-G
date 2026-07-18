@@ -1,25 +1,25 @@
-# Etapa de construcción
-FROM ghcr.io/cirruslabs/flutter:stable AS build
+# Usamos la imagen oficial de Dart (mucho más ligera y limpia)
+FROM dart:stable AS build
 WORKDIR /app
 
-# 1. Definimos una variable de caché (cambia el número 1 a 2, 3, etc., si sigue fallando)
-ARG CACHEBUST=1
-
-# 2. Copiamos solo los archivos de configuración
+# 1. Copiamos los archivos de dependencias
 COPY pubspec.yaml pubspec.lock ./
 
-# 3. Limpiamos cualquier rastro antes de instalar
-RUN rm -rf .dart_tool/ && flutter pub get
+# 2. Instalamos dependencias limpias en un entorno Dart puro
+RUN dart pub get
 
-# 4. Copiamos el código
+# 3. Copiamos solo el código necesario
 COPY lib/ lib/
 COPY assets/ assets/
 
-# 5. Compilamos el servidor
-# Forzamos una última limpieza antes de compilar
-RUN rm -rf .dart_tool/ && flutter pub get && dart compile exe lib/server/bin/server.dart -o bin/server
+# 4. Limpiamos cualquier rastro de .dart_tool y regeneramos
+# Esto obliga a generar nuevas rutas internas de Linux
+RUN rm -rf .dart_tool/ .packages && dart pub get
 
-# Segunda etapa: Imagen ligera
+# 5. Compilamos
+RUN dart compile exe lib/server/bin/server.dart -o bin/server
+
+# Segunda etapa: Imagen ligera de ejecución
 FROM debian:stable-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
