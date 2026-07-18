@@ -1,23 +1,23 @@
-# Etapa de construcción
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
 # 1. Copiamos solo los archivos de dependencias
 COPY pubspec.yaml pubspec.lock ./
 
-# 2. Instalamos dependencias en Linux
+# 2. Eliminamos cualquier rastro de configuración local de Windows antes de hacer el pub get
+RUN rm -rf .dart_tool/ package_config.json
+
+# 3. Instalamos dependencias limpias
 RUN flutter pub get
 
-# 3. Copiamos el resto del código
+# 4. Copiamos el resto del código
 COPY . .
 
-# 4. LIMPIEZA: Si algo se copió, lo eliminamos explícitamente
-RUN rm -rf .dart_tool/ && rm -rf build/
+# 5. ELIMINACIÓN CRÍTICA: Borramos la carpeta .dart_tool que pudo haber venido con el COPY . .
+# y forzamos la regeneración de configuración de Linux.
+RUN rm -rf .dart_tool/ && rm -f package_config.json && flutter pub get
 
-# 5. Regeneramos dependencias con la configuración de Linux
-RUN flutter pub get
-
-# 6. Compilamos
+# 6. Compilamos el servidor
 RUN dart compile exe lib/server/bin/server.dart -o bin/server
 
 # Segunda etapa: Imagen ligera
