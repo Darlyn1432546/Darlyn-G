@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "256561730",
+    "project_id": "musicpochita-205ac",
+    "storage_bucket": "musicpochita-205ac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:256561730:android:a8af6a529b08f3016893db",
+        "android_client_info": {
+          "package_name": "com.darlyn.musichita"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "256561730-pd2n4ea3o38dikbpbtvep9cbnq8vs29g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.darlyn.musichita",
+            "certificate_hash": "ba8bd418d448052d972fbaf2c946f229694e6790"
+          }
+        },
+        {
+          "client_id": "256561730-stcc91croomehno9tbldltfui9ostogp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.darlyn.musichita",
+            "certificate_hash": "7bf76789114bfa7efc5b7cf8364a1d7e2d41951d"
+          }
+        },
+        {
+          "client_id": "256561730-h9n6lvfjh6ub1i3knmo9r87cs60t64ki.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiTkw1zEaPMxy314gQ2Hze39RghH00N-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "256561730-h9n6lvfjh6ub1i3knmo9r87cs60t64ki.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "256561730-imsf8mbchrtf0m9mfnldbe6dqppmaumu.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterAppMusic"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,14 @@
+# Archivos a ignorar por Docker
+.dart_tool/
+.git/
+.gitignore
+.idea/
+.vscode/
+build/
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+*.log
