@@ -1,8 +1,7 @@
-# Archivos de Windows/Locales que NO deben subir
 .dart_tool/
+.git/
+.gitignore
 .packages
-.pub-cache/
-.pub/
 build/
 android/
 ios/
@@ -10,5 +9,4 @@ linux/
 macos/
 windows/
 web/
-pubspec.lock
 *.log
