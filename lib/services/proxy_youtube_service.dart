@@ -9,7 +9,7 @@ class ProxyYoutubeService {
     if (kIsWeb) {
       return 'http://localhost:8081'; // ← Puerto 8081 para el proxy
     } else {
-      return 'http://192.168.0.207:8081'; // IP local para Android
+      return 'http://192.168.1.17:8081'; // IP local para Android
     }
   }
 

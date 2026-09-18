@@ -21,249 +21,262 @@ void main() async {
   await ytMusic.initialize(cookies: cookie);
   print('✅ YouTube Music inicializado en el servidor');
 
-  // Ruta al ejecutable de yt-dlp (ajústala si es necesario)
-  final ytDlpPath = Platform.isWindows
-      ? r'C:\tools\yt-dlp.exe' // ruta absoluta con barras invertidas escapadas
-      : 'yt-dlp';
+  // Rutas adaptables según el sistema operativo (Windows o Linux/Docker)
+  final ytDlpPath = Platform.isWindows ? r'C:\tools\yt-dlp.exe' : 'yt-dlp';
+  final cookiesPath = Platform.isWindows ? r'C:\tools\cookies.txt' : 'cookies.txt';
+final app = Router();
 
-  final app = Router()
-    ..get('/search', (Request req) async {
-      final query = req.url.queryParameters['q'] ?? '';
-      if (query.isEmpty) {
-        return Response.badRequest(body: 'Missing query parameter q');
-      }
-      try {
-        final results = await ytMusic.searchSongs(query);
-        final songs = results
-            .map((song) => {
-                  'id': song.videoId,
-                  'title': song.name,
-                  'artist': song.artist.name,
-                  'thumbnail':
-                      'https://img.youtube.com/vi/${song.videoId}/hqdefault.jpg',
-                })
-            .toList();
-        return Response.ok(
-          jsonEncode({'songs': songs}),
-          headers: {'Content-Type': 'application/json'},
-        );
-      } catch (e) {
-        return Response.internalServerError(body: 'Error: $e');
-      }
-    })
-    ..get('/trending', (Request req) async {
-      try {
-        final results = await ytMusic.searchSongs('trending music');
-        final songs = results
-            .map((song) => {
-                  'id': song.videoId,
-                  'title': song.name,
-                  'artist': song.artist.name,
-                  'thumbnail':
-                      'https://img.youtube.com/vi/${song.videoId}/hqdefault.jpg',
-                })
-            .toList();
-        return Response.ok(
-          jsonEncode({'songs': songs}),
-          headers: {'Content-Type': 'application/json'},
-        );
-      } catch (e) {
-        return Response.internalServerError(body: 'Error: $e');
-      }
-    })
-    ..get('/audio', (Request req) async {
-  final id = req.url.queryParameters['id'] ?? '';
-  if (id.isEmpty) {
-    return Response.badRequest(body: 'Missing id parameter');
-  }
-  try {
-    final result = await Process.run(
-      ytDlpPath,
-      [
-        '-f', 'bestaudio',
-        '--get-url',
-        '--cookies', r'C:\tools\cookies.txt',
-        '--js-runtimes', 'node',
-        '--remote-components', 'ejs:github',
-        '--no-check-certificate',
-        'https://www.youtube.com/watch?v=$id',
-      ],
-      runInShell: true,
-    );
-    if (result.exitCode != 0) {
-      print('❌ yt-dlp error: ${result.stderr}');
-      return Response.internalServerError(body: 'Error obteniendo URL');
+app.get('/health', (Request req) {
+    return Response.ok('OK', headers: {'Content-Type': 'text/plain'});
+  });
+
+  // (Aquí mantienes todas tus rutas de la API igual: /search, /trending, /audio, /stream, /download, /liked)
+  app.get('/search', (Request req) async {
+    final query = req.url.queryParameters['q'] ?? '';
+    if (query.isEmpty) {
+      return Response.badRequest(body: 'Missing query parameter q');
     }
-    final audioUrl = (result.stdout as String).trim();
-    print('🎵 URL directa obtenida: $audioUrl');
-    return Response.ok(
-      jsonEncode({'url': audioUrl}),
-      headers: {'Content-Type': 'application/json'},
-    );
-  } catch (e) {
-    print('❌ Error en /audio: $e');
-    return Response.internalServerError(body: 'Error: $e');
+    try {
+      final results = await ytMusic.searchSongs(query);
+      final songs = results
+          .map((song) => {
+                'id': song.videoId,
+                'title': song.name,
+                'artist': song.artist.name,
+                'thumbnail':
+                    'https://img.youtube.com/vi/${song.videoId}/hqdefault.jpg',
+              })
+          .toList();
+      return Response.ok(
+        jsonEncode({'songs': songs}),
+        headers: {'Content-Type': 'application/json'},
+      );
+    } catch (e) {
+      return Response.internalServerError(body: 'Error: $e');
+    }
+  });
+
+  app.get('/trending', (Request req) async {
+    try {
+      final results = await ytMusic.searchSongs('trending music');
+      final songs = results
+          .map((song) => {
+                'id': song.videoId,
+                'title': song.name,
+                'artist': song.artist.name,
+                'thumbnail':
+                    'https://img.youtube.com/vi/${song.videoId}/hqdefault.jpg',
+              })
+          .toList();
+      return Response.ok(
+        jsonEncode({'songs': songs}),
+        headers: {'Content-Type': 'application/json'},
+      );
+    } catch (e) {
+      return Response.internalServerError(body: 'Error: $e');
+    }
+  });
+
+  app.get('/audio', (Request req) async {
+    final id = req.url.queryParameters['id'] ?? '';
+    if (id.isEmpty) {
+      return Response.badRequest(body: 'Missing id parameter');
+    }
+    try {
+      final result = await Process.run(
+        ytDlpPath,
+        [
+          '-f', 'bestaudio',
+          '--get-url',
+          '--cookies', cookiesPath,
+          '--js-runtimes', 'node',
+          '--remote-components', 'ejs:github',
+          '--no-check-certificate',
+          'https://www.youtube.com/watch?v=$id',
+        ],
+        runInShell: true,
+      );
+      if (result.exitCode != 0) {
+        print('❌ yt-dlp error: ${result.stderr}');
+        return Response.internalServerError(body: 'Error obteniendo URL');
+      }
+      final audioUrl = (result.stdout as String).trim();
+      print('🎵 URL directa obtenida: $audioUrl');
+      return Response.ok(
+        jsonEncode({'url': audioUrl}),
+        headers: {'Content-Type': 'application/json'},
+      );
+    } catch (e) {
+      print('❌ Error en /audio: $e');
+      return Response.internalServerError(body: 'Error: $e');
+    }
+  });
+
+  app.get('/stream', (Request req) async {
+    final id = req.url.queryParameters['id'] ?? '';
+    if (id.isEmpty) {
+      return Response.badRequest(body: 'Missing id parameter');
+    }
+
+    try {
+      final result = await Process.run(
+        ytDlpPath,
+        [
+          '-f', 'bestaudio',
+          '--get-url',
+          '--cookies', cookiesPath,
+          '--remote-components', 'ejs:github',
+          '--no-check-certificate',
+          'https://www.youtube.com/watch?v=$id',
+        ],
+        runInShell: true,
+      );
+
+      if (result.exitCode != 0) {
+        print('❌ yt-dlp error: ${result.stderr}');
+        return Response.internalServerError(body: 'Error obteniendo URL');
+      }
+
+      final audioUrl = (result.stdout as String).trim();
+      print('🎵 Proxy: URL obtenida para $id');
+
+      final client = http.Client();
+      final requestToYoutube = http.Request('GET', Uri.parse(audioUrl));
+      final rangeHeader = req.headers['range'];
+      if (rangeHeader != null) {
+        requestToYoutube.headers['range'] = rangeHeader;
+      }
+      requestToYoutube.headers['user-agent'] =
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
+
+      final responseFromYoutube = await client.send(requestToYoutube);
+
+      final controller = StreamController<List<int>>();
+      responseFromYoutube.stream.listen(
+        (data) => controller.add(data),
+        onError: (error) {
+          controller.addError(error);
+          client.close();
+        },
+        onDone: () {
+          controller.close();
+          client.close();
+        },
+      );
+
+      final responseHeaders = {
+        'Content-Type':
+            responseFromYoutube.headers['content-type'] ?? 'audio/webm',
+        'Content-Length':
+            responseFromYoutube.headers['content-length'] ?? '0',
+        'Content-Range': responseFromYoutube.headers['content-range'] ?? '',
+        'Accept-Ranges': 'bytes',
+        'Access-Control-Allow-Origin': '*',
+      };
+
+      return Response(
+        responseFromYoutube.statusCode,
+        body: controller.stream,
+        headers: responseHeaders,
+      );
+    } catch (e) {
+      print('❌ Error en /stream para ID $id: $e');
+      return Response.internalServerError(body: 'Error: $e');
+    }
+  });
+
+  app.get('/download', (Request req) async {
+    final id = req.url.queryParameters['id'] ?? '';
+    if (id.isEmpty) {
+      return Response.badRequest(body: 'Missing id parameter');
+    }
+
+    try {
+      final downloadsDir = Directory('downloads');
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create();
+      }
+
+      final outputPath = 'downloads/$id.mp3';
+
+      final result = await Process.run(
+        ytDlpPath,
+        [
+          '-x',
+          '--audio-format',
+          'mp3',
+          '--audio-quality',
+          '0',
+          '--output',
+          outputPath,
+          '--cookies',
+          cookiesPath,
+          '--extractor-args',
+          'youtube:player_client=android',
+          'https://www.youtube.com/watch?v=$id',
+        ],
+        runInShell: true,
+      );
+
+      if (result.exitCode != 0) {
+        print('❌ Error en descarga: ${result.stderr}');
+        return Response.internalServerError(body: 'Error al descargar');
+      }
+
+      final file = File(outputPath);
+      if (!await file.exists()) {
+        return Response.internalServerError(body: 'Archivo no encontrado');
+      }
+
+      final bytes = await file.readAsBytes();
+
+      return Response.ok(bytes, headers: {
+        'Content-Type': 'audio/mpeg',
+        'Content-Disposition': 'attachment; filename="$id.mp3"',
+        'Access-Control-Allow-Origin': '*',
+      });
+    } catch (e) {
+      print('❌ Error en /download: $e');
+      return Response.internalServerError(body: 'Error: $e');
+    }
+  });
+
+  app.get('/liked', (Request req) async {
+    try {
+      final liked = await ytMusic.searchSongs('liked songs');
+      final songs = liked
+          .map((song) => {
+                'id': song.videoId,
+                'title': song.name,
+                'artist': song.artist.name,
+                'thumbnail':
+                    'https://img.youtube.com/vi/${song.videoId}/hqdefault.jpg',
+              })
+          .toList();
+      return Response.ok(
+        jsonEncode({'songs': songs}),
+        headers: {'Content-Type': 'application/json'},
+      );
+    } catch (e) {
+      return Response.internalServerError(body: 'Error: $e');
+    }
+  });
+
+  // Manejador dedicado exclusivamente para la raíz (intercepta GET y HEAD perfectamente)
+  Response rootHandler(Request request) {
+    if (request.url.path == '' || request.url.path == '/') {
+      return Response.ok('¡Servidor de Musichita activo y funcionando! 🎵');
+    }
+    return Response.notFound('Not Found');
   }
-})
-    ..get('/stream', (Request req) async {
-      final id = req.url.queryParameters['id'] ?? '';
-      if (id.isEmpty) {
-        return Response.badRequest(body: 'Missing id parameter');
-      }
 
-      try {
-        // 1. Obtener la URL del audio con yt-dlp (AHORA CON LA CONFIGURACIÓN CORRECTA)
-final result = await Process.run(
-  ytDlpPath,
-  [
-    '-f', 'bestaudio',
-    '--get-url',
-    '--cookies', r'C:\tools\cookies.txt',
-    '--remote-components', 'ejs:github',
-    '--no-check-certificate',
-    'https://www.youtube.com/watch?v=$id',
-  ],
-  runInShell: true,
-);
-
-        if (result.exitCode != 0) {
-          print('❌ yt-dlp error: ${result.stderr}');
-          return Response.internalServerError(body: 'Error obteniendo URL');
-        }
-
-        final audioUrl = (result.stdout as String).trim();
-        print('🎵 Proxy: URL obtenida para $id');
-
-        // 2. Hacer la solicitud a YouTube con soporte para Range
-        final client = http.Client();
-        final requestToYoutube = http.Request('GET', Uri.parse(audioUrl));
-        final rangeHeader = req.headers['range'];
-        if (rangeHeader != null) {
-          requestToYoutube.headers['range'] = rangeHeader;
-        }
-        requestToYoutube.headers['user-agent'] =
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
-
-        final responseFromYoutube = await client.send(requestToYoutube);
-
-        // 3. Crear un StreamController para manejar el flujo y cerrar el cliente
-        final controller = StreamController<List<int>>();
-        responseFromYoutube.stream.listen(
-          (data) => controller.add(data),
-          onError: (error) {
-            controller.addError(error);
-            client.close();
-          },
-          onDone: () {
-            controller.close();
-            client.close();
-          },
-        );
-
-        // 4. Preparar cabeceras de respuesta
-        final responseHeaders = {
-          'Content-Type':
-              responseFromYoutube.headers['content-type'] ?? 'audio/webm',
-          'Content-Length':
-              responseFromYoutube.headers['content-length'] ?? '0',
-          'Content-Range': responseFromYoutube.headers['content-range'] ?? '',
-          'Accept-Ranges': 'bytes',
-          'Access-Control-Allow-Origin': '*',
-        };
-
-        // 5. Devolver la respuesta
-        return Response(
-          responseFromYoutube.statusCode,
-          body: controller.stream,
-          headers: responseHeaders,
-        );
-      } catch (e) {
-        print('❌ Error en /stream para ID $id: $e');
-        return Response.internalServerError(body: 'Error: $e');
-      }
-    })
-    ..get('/download', (Request req) async {
-      final id = req.url.queryParameters['id'] ?? '';
-      if (id.isEmpty) {
-        return Response.badRequest(body: 'Missing id parameter');
-      }
-
-      try {
-        final downloadsDir = Directory('downloads');
-        if (!await downloadsDir.exists()) {
-          await downloadsDir.create();
-        }
-
-        final outputPath = 'downloads/$id.mp3';
-
-        final result = await Process.run(
-          ytDlpPath,
-          [
-            '-x',
-            '--audio-format',
-            'mp3',
-            '--audio-quality',
-            '0',
-            '--output',
-            outputPath,
-            '--cookies',
-            r'C:\tools\cookies.txt',
-            '--extractor-args',
-            'youtube:player_client=android',
-            'https://www.youtube.com/watch?v=$id',
-          ],
-          runInShell: true,
-        );
-
-        if (result.exitCode != 0) {
-          print('❌ Error en descarga: ${result.stderr}');
-          return Response.internalServerError(body: 'Error al descargar');
-        }
-
-        final file = File(outputPath);
-        if (!await file.exists()) {
-          return Response.internalServerError(body: 'Archivo no encontrado');
-        }
-
-        final bytes = await file.readAsBytes();
-        // Opcional: eliminar el archivo después de enviarlo
-        // await file.delete();
-
-        return Response.ok(bytes, headers: {
-          'Content-Type': 'audio/mpeg',
-          'Content-Disposition': 'attachment; filename="$id.mp3"',
-          'Access-Control-Allow-Origin': '*',
-        });
-      } catch (e) {
-        print('❌ Error en /download: $e');
-        return Response.internalServerError(body: 'Error: $e');
-      }
-    })
-    ..get('/liked', (Request req) async {
-      try {
-        final liked = await ytMusic.searchSongs('liked songs');
-        final songs = liked
-            .map((song) => {
-                  'id': song.videoId,
-                  'title': song.name,
-                  'artist': song.artist.name,
-                  'thumbnail':
-                      'https://img.youtube.com/vi/${song.videoId}/hqdefault.jpg',
-                })
-            .toList();
-        return Response.ok(
-          jsonEncode({'songs': songs}),
-          headers: {'Content-Type': 'application/json'},
-        );
-      } catch (e) {
-        return Response.internalServerError(body: 'Error: $e');
-      }
-    });
+  // Combinamos la raíz y el enrutador usando Cascade
+  final cascade = Cascade().add(rootHandler).add(app.call);
 
   final handler = const Pipeline()
       .addMiddleware(logRequests())
       .addMiddleware(corsHeaders())
-      .addHandler(app.call);
+      .addHandler(cascade.handler);
 
   final port = int.parse(Platform.environment['PORT'] ?? '8081');
   await io.serve(handler, '0.0.0.0', port);

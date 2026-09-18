@@ -1,24 +1,23 @@
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 WORKDIR /app
 
-# 1. Definimos una variable de caché (cambia a 2 si sigue fallando)
-ARG CACHEBUST=1
+# 1. AISLAMIENTO: Obligamos a que el caché de paquetes esté en una ruta limpia de Linux
+ENV PUB_CACHE=/tmp/.pub-cache
+ENV PATH="$PATH:/tmp/.pub-cache/bin"
 
-# 2. Copiamos solo los archivos de dependencias
+# 2. Copiamos los archivos de configuración
 COPY pubspec.yaml pubspec.lock ./
 
-# 3. Instalamos dependencias en Linux (esto crea rutas de Linux)
-RUN flutter pub get
+# 3. Borramos el lock y los paquetes para asegurar limpieza
+RUN rm -rf .dart_tool/ .packages pubspec.lock && flutter pub get
 
-# 4. AQUÍ ESTÁ EL CAMBIO: No copies todo. Copia solo lo que necesitas.
-# Esto evita que las carpetas "sucias" de Windows entren al contenedor.
+# 4. Copiamos el código fuente
 COPY lib/ lib/
 COPY assets/ assets/
-# Si tienes una carpeta bin en la raíz, descomenta la línea de abajo:
-# COPY bin/ bin/
 
 # 5. Compilamos
-RUN dart compile exe lib/server/bin/server.dart -o bin/server
+# Forzamos la regeneración del package_config.json justo antes de compilar
+RUN rm -rf .dart_tool/ && flutter pub get && dart compile exe lib/server/bin/server.dart -o bin/server
 
 # Segunda etapa: Imagen ligera
 FROM debian:stable-slim
