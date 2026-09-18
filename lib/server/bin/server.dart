@@ -263,20 +263,15 @@ app.get('/health', (Request req) {
   });
 
   // Manejador dedicado exclusivamente para la raíz (intercepta GET y HEAD perfectamente)
-  Response rootHandler(Request request) {
-    if (request.url.path == '' || request.url.path == '/') {
-      return Response.ok('¡Servidor de Musichita activo y funcionando! 🎵');
-    }
-    return Response.notFound('Not Found');
-  }
+app.get('/', (Request req) {
+    return Response.ok('¡Servidor de Musichita activo y funcionando! 🎵');
+  });
 
-  // Combinamos la raíz y el enrutador usando Cascade
-  final cascade = Cascade().add(rootHandler).add(app.call);
-
+  // 👇 DEJA SOLO ESTO PARA EL HANDLER
   final handler = const Pipeline()
       .addMiddleware(logRequests())
       .addMiddleware(corsHeaders())
-      .addHandler(cascade.handler);
+      .addHandler(app.call);
 
   final port = int.parse(Platform.environment['PORT'] ?? '8081');
   await io.serve(handler, '0.0.0.0', port);
